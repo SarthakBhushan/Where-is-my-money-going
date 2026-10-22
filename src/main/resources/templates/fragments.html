@@ -1,0 +1,24 @@
+<!-- templates/fragments.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title th:text="${title} + ' · Where is my money going?'">Where is my money going?</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<div th:fragment="hero(active)" class="top">
+    <div class="hero">
+        <h1>💰 Where is my money going?</h1>
+        <p>Privacy-first expense intelligence for Indian bank statements.</p>
+    </div>
+    <nav class="tabs" th:if="${active != 'home'}">
+        <a th:href="@{/dashboard}" th:classappend="${active == 'dashboard'} ? 'on'">📊 Dashboard</a>
+        <a th:href="@{/transactions}" th:classappend="${active == 'transactions'} ? 'on'">📄 Transactions</a>
+        <a th:href="@{/developer}" th:classappend="${active == 'developer'} ? 'on'">🛠 Developer</a>
+        <form th:action="@{/reset}" method="post"><button type="submit">↩ New statement</button></form>
+    </nav>
+</div>
+</body>
+</html>

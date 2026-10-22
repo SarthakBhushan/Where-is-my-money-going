@@ -1,0 +1,42 @@
+<!-- templates/developer.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Developer')}"></head>
+<body>
+<div th:replace="~{fragments :: hero('developer')}"></div>
+<main>
+    <p class="banner ok" th:if="${flash}" th:text="${flash}"></p>
+    <p class="banner warn">Parsing is automatic and can misread amounts, dates or merchants. Verify against your original statement.</p>
+
+    <section class="cards">
+        <div class="card"><span>Recognized</span><b th:text="${coverage.recognized()}"></b></div>
+        <div class="card"><span>Unknown</span><b th:text="${coverage.unknown()}"></b></div>
+        <div class="card"><span>Coverage</span><b th:text="${#numbers.formatDecimal(coverage.percent(),1,1,'POINT')} + '%'"></b></div>
+    </section>
+
+    <section class="panel">
+        <h2>💸 Top Unknown Spending</h2>
+        <p class="muted" th:if="${unknown.isEmpty()}">Every debit was recognised. 🎉</p>
+        <p class="muted" th:if="${!unknown.isEmpty()}">Pick or type a merchant and a keyword, then save. The rule is stored on your computer only.</p>
+        <datalist id="merchantNames"><option th:each="n : ${merchantNames}" th:value="${n}"></option></datalist>
+        <div class="scroll" th:if="${!unknown.isEmpty()}"><table>
+            <thead><tr><th class="num">Spend</th><th class="num">Freq</th><th>Narration</th><th>Merchant</th><th>Keyword</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="u : ${unknown}">
+                <td class="num" th:text="${@fmt.inr(u.totalSpend())}"></td>
+                <td class="num" th:text="${u.transactions()}"></td>
+                <td th:text="${u.narration()}"></td>
+                <td colspan="3">
+                    <form class="inline" th:action="@{/developer/rules}" method="post">
+                        <input name="merchant" list="merchantNames" placeholder="Merchant name…" required>
+                        <input name="keyword" th:value="${u.suggestedKeyword()}" required>
+                        <button class="btn primary" type="submit">➕ Add</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table></div>
+    </section>
+</main>
+</body>
+</html>

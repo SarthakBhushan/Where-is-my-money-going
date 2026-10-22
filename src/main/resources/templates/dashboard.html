@@ -1,0 +1,175 @@
+<!-- templates/dashboard.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Dashboard')}"></head>
+<body>
+<div th:replace="~{fragments :: hero('dashboard')}"></div>
+<main>
+    <p class="banner ok"
+       th:text="|📄 ${statement.bank()} statement • ${summary.count()} transactions • ${#temporals.format(from,'dd MMM yyyy')} – ${#temporals.format(to,'dd MMM yyyy')}|"></p>
+    <p class="muted">⚠️ Parsed automatically — verify amounts, dates and merchants against your original statement.</p>
+
+    <section class="cards">
+        <div class="card"><span>💰 Total Credit</span><b th:text="${@fmt.inr(summary.totalCredit())}"></b></div>
+        <div class="card"><span>💸 Total Debit</span><b th:text="${@fmt.inr(summary.totalDebit())}"></b></div>
+        <div class="card"><span>📈 Saved</span><b th:text="${@fmt.inr(summary.net())}"></b></div>
+        <div class="card"><span>📆 Avg Monthly Spend</span><b th:text="${@fmt.inr(summary.avgMonthlySpend())}"></b></div>
+        <div class="card"><span>📊 Savings Rate</span><b th:text="${summary.savingsRate()} + '%'"></b></div>
+    </section>
+
+    <section class="panel" id="assistant">
+        <h2>🤖 Ask about your spending <span class="pill" id="aiState">checking…</span></h2>
+        <div class="banner warn" id="aiSetup" hidden></div>
+        <div class="ai-actions">
+            <button type="button" class="btn primary" id="aiExplain">✨ Explain my spending</button>
+            <button type="button" class="btn" data-q="Where did most of my money go?">Where did most of my money go?</button>
+            <button type="button" class="btn" data-q="How can I save more each month?">How can I save more?</button>
+            <button type="button" class="btn" data-q="Which recurring payments should I review?">Review recurring payments</button>
+            <button type="button" class="btn" id="aiClear">Clear chat</button>
+        </div>
+        <div class="ai-log" id="aiLog" aria-live="polite"></div>
+        <form class="inline" id="aiForm">
+            <input id="aiInput" maxlength="500" autocomplete="off" style="flex:1;min-width:220px"
+                   placeholder="Ask in English, Hindi or Hinglish, e.g. is mahine zomato pe kitna kharcha hua?">
+            <button type="submit" class="btn primary" id="aiSend">Send</button>
+        </form>
+        <p class="muted">Runs on your own device through Ollama (model <code id="aiModel"></code>). All numbers are
+            calculated from your statement; the AI only explains them and can still make mistakes.</p>
+    </section>
+
+    <section class="panel"><h2>📅 Monthly Spending Trend</h2><div class="chart"><canvas id="monthlyChart"></canvas></div></section>
+    <section class="panel"><h2>💵 Income vs Expense</h2><div class="chart"><canvas id="flowChart"></canvas></div></section>
+    <section class="panel"><h2>💰 Balance Trajectory</h2><div class="chart"><canvas id="balanceChart"></canvas></div></section>
+
+    <section class="panel">
+        <h2>🏪 Top Merchants</h2>
+        <nav class="tabs">
+            <a th:each="opt : ${ {10, 20, 50, 0} }" th:href="@{/dashboard(top=${opt})}"
+               th:classappend="${top == opt} ? 'on'" th:text="${opt == 0} ? 'All' : 'Top ' + ${opt}"></a>
+        </nav>
+        <div class="chart" th:style="'height:' + ${merchants.size() > 10 ? merchants.size() * 32 + 60 : 360} + 'px'">
+            <canvas id="merchantChart"></canvas>
+        </div>
+    </section>
+
+    <section class="panel">
+        <h2>📋 Merchant summary</h2>
+        <div class="scroll"><table>
+            <thead><tr><th>Merchant</th><th class="num">Spend</th><th class="num">Transactions</th><th class="num">Average</th></tr></thead>
+            <tbody>
+            <tr th:each="m : ${merchants}" th:classappend="${m.merchant() == '🟡 Needs Review'} ? 'review'">
+                <td th:text="${m.merchant()}"></td>
+                <td class="num" th:text="${@fmt.inr(m.spend())}"></td>
+                <td class="num" th:text="${m.transactions()}"></td>
+                <td class="num" th:text="${@fmt.inr(m.average())}"></td>
+            </tr>
+            </tbody>
+        </table></div>
+    </section>
+
+    <section class="panel" th:if="${!kinds.isEmpty()}">
+        <h2>🧾 Where did you spend money?</h2>
+        <div class="chart" style="height:340px"><canvas id="kindChart"></canvas></div>
+    </section>
+
+    <section class="panel">
+        <h2>🔄 Recurring Subscriptions</h2>
+        <p class="muted" th:if="${subscriptions.isEmpty()}">No recurring payments detected — import more statement months for better detection.</p>
+        <table th:if="${!subscriptions.isEmpty()}">
+            <thead><tr><th>Merchant</th><th class="num">Amount</th><th>Cadence</th><th class="num">Occurrences</th><th class="num">Annual Cost</th></tr></thead>
+            <tbody>
+            <tr th:each="s : ${subscriptions}">
+                <td th:text="${s.merchant()}"></td>
+                <td class="num" th:text="${@fmt.inr(s.amount())}"></td>
+                <td th:text="${s.cadence()}"></td>
+                <td class="num" th:text="${s.occurrences()}"></td>
+                <td class="num" th:text="${@fmt.inr(s.annualCost())}"></td>
+            </tr>
+            </tbody>
+        </table>
+    </section>
+
+    <section class="panel">
+        <h2>💡 Highlights</h2>
+        <div class="cards">
+            <div class="card"><span>🏪 Highest Merchant</span>
+                <b th:text="${merchants.isEmpty()} ? '-' : ${merchants.get(0).merchant()} + ' (' + ${@fmt.inr(merchants.get(0).spend())} + ')'"></b></div>
+            <div class="card"><span>🧾 Top Category</span>
+                <b th:text="${kinds.isEmpty()} ? '-' : ${kinds.get(0).kind()}"></b></div>
+            <div class="card"><span>💰 Savings Rate</span><b th:text="${summary.savingsRate()} + '%'"></b></div>
+            <div class="card"><span>📅 Statement Period</span>
+                <b th:text="|${#temporals.format(from,'MMM yyyy')} – ${#temporals.format(to,'MMM yyyy')}|"></b></div>
+        </div>
+    </section>
+</main>
+
+<script th:src="@{/js/chart.umd.js}"></script>
+<script th:src="@{/js/assistant.js}"></script>
+<script th:inline="javascript">
+    const monthly   = /*[[${monthly}]]*/ [];
+    const balance   = /*[[${balance}]]*/ [];
+    const merchants = /*[[${merchants}]]*/ [];
+    const kinds     = /*[[${kinds}]]*/ [];
+
+    const ACCENT = '#2563EB', TEAL = '#0D9488', YELLOW = '#EAB308', PURPLE = '#7C3AED';
+    const inr = v => '₹' + Number(v).toLocaleString('en-IN', {maximumFractionDigits: 0});
+    const moneyAxis = {ticks: {callback: inr}};
+    const tip = {callbacks: {label: c => (c.dataset.label ? c.dataset.label + ': ' : '') + inr(c.chart.options.indexAxis === 'y' ? c.parsed.x : c.parsed.y)}};
+    const base = {responsive: true, maintainAspectRatio: false};
+
+    function draw(id, config) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        try {
+            new Chart(el, config);
+        } catch (e) {
+            console.error('Chart "' + id + '" failed:', e);
+        }
+    }
+
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js did not load - check that /js/chart.umd.js exists.');
+    } else {
+        draw('monthlyChart', {
+            type: 'bar',
+            data: {labels: monthly.map(m => m.label),
+                   datasets: [{label: 'Spent', data: monthly.map(m => m.expense), backgroundColor: ACCENT, borderRadius: 6}]},
+            options: {...base, plugins: {legend: {display: false}, tooltip: tip}, scales: {y: moneyAxis}}
+        });
+
+        draw('flowChart', {
+            type: 'bar',   // required, even though each dataset sets its own type
+            data: {labels: monthly.map(m => m.label), datasets: [
+                {type: 'bar',  label: 'Income',  data: monthly.map(m => m.income),  backgroundColor: TEAL,   borderRadius: 6},
+                {type: 'bar',  label: 'Expense', data: monthly.map(m => m.expense), backgroundColor: ACCENT, borderRadius: 6},
+                {type: 'line', label: 'Savings', data: monthly.map(m => m.savings), borderColor: PURPLE, backgroundColor: PURPLE, tension: .25}]},
+            options: {...base, plugins: {tooltip: tip}, scales: {y: moneyAxis}}
+        });
+
+        draw('balanceChart', {
+            type: 'line',
+            data: {labels: balance.map(p => p.date),
+                   datasets: [{label: 'Balance', data: balance.map(p => p.balance), borderColor: TEAL,
+                               backgroundColor: 'rgba(13,148,136,.18)', fill: true, pointRadius: 0, tension: .2}]},
+            options: {...base, plugins: {legend: {display: false}, tooltip: tip},
+                      scales: {y: moneyAxis, x: {ticks: {maxTicksLimit: 12}}}}
+        });
+
+        draw('merchantChart', {
+            type: 'bar',
+            data: {labels: merchants.map(m => m.merchant),
+                   datasets: [{label: 'Spend', data: merchants.map(m => m.spend), borderRadius: 6,
+                               backgroundColor: merchants.map(m => m.merchant.startsWith('🟡') ? YELLOW : ACCENT)}]},
+            options: {...base, indexAxis: 'y', plugins: {legend: {display: false}, tooltip: tip}, scales: {x: {...moneyAxis, grace: '8%'}}}
+        });
+
+        draw('kindChart', {
+            type: 'bar',
+            data: {labels: kinds.map(k => k.kind),
+                   datasets: [{label: 'Spend', data: kinds.map(k => k.amount), backgroundColor: ACCENT, borderRadius: 6}]},
+            options: {...base, indexAxis: 'y', plugins: {legend: {display: false}, tooltip: tip}, scales: {x: {...moneyAxis, grace: '8%'}}}
+        });
+    }
+</script>
+</body>
+</html>

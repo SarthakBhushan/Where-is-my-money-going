@@ -1,0 +1,37 @@
+<!-- templates/transactions.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Transactions')}"></head>
+<body>
+<div th:replace="~{fragments :: hero('transactions')}"></div>
+<main>
+    <section class="panel">
+        <form class="inline" th:action="@{/transactions}" method="get">
+            <input type="search" name="q" th:value="${q}" placeholder="🔍 Search narration or merchant…" size="34">
+            <select name="type">
+                <option th:each="t : ${ {'All','DEBIT','CREDIT'} }" th:value="${t}" th:text="${t}" th:selected="${t == type}"></option>
+            </select>
+            <select name="merchant">
+                <option value="All">All merchants</option>
+                <option th:each="m : ${merchantOptions}" th:value="${m}" th:text="${m}" th:selected="${m == merchant}"></option>
+            </select>
+            <button class="btn primary" type="submit">Filter</button>
+        </form>
+        <p class="muted" th:text="|${rows.size()} of ${total} transactions|"></p>
+        <div class="scroll"><table>
+            <thead><tr><th>Date</th><th>Narration</th><th>Merchant</th><th class="num">Amount</th><th>Type</th><th class="num">Balance</th></tr></thead>
+            <tbody>
+            <tr th:each="t : ${rows}" th:classappend="${t.merchant() == 'Unknown'} ? 'review'">
+                <td th:text="${#temporals.format(t.date(),'dd-MMM-yyyy')}"></td>
+                <td th:text="${t.narration()}"></td>
+                <td th:text="${t.merchant()}"></td>
+                <td class="num" th:text="'₹' + ${#numbers.formatDecimal(t.amount(),1,'COMMA',2,'POINT')}"></td>
+                <td th:text="${t.type()}"></td>
+                <td class="num" th:text="${t.balance() == null} ? '-' : '₹' + ${#numbers.formatDecimal(t.balance(),1,'COMMA',2,'POINT')}"></td>
+            </tr>
+            </tbody>
+        </table></div>
+    </section>
+</main>
+</body>
+</html>

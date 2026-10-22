@@ -1,0 +1,30 @@
+<!-- templates/index.html -->
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments :: head('Upload')}"></head>
+<body>
+<div th:replace="~{fragments :: hero('home')}"></div>
+<main>
+    <p class="banner err" th:if="${error}" th:text="${error}"></p>
+
+    <section class="panel">
+        <h2>Upload bank statement</h2>
+        <form class="inline" th:action="@{/upload}" method="post" enctype="multipart/form-data">
+            <input type="file" name="file" accept=".xls,.xlsx" required>
+            <input type="password" name="password" placeholder="Password (only if protected)" autocomplete="off">
+            <button class="btn primary" type="submit">Analyse</button>
+        </form>
+        <p class="muted">Supports HDFC, SBI and ICICI .xls / .xlsx exports. PDF support is coming.
+            Your statement is parsed in memory and never stored.</p>
+    </section>
+
+    <section class="panel">
+        <h2>🚀 Try a 12-month sample</h2>
+        <form class="inline" th:action="@{/sample}" method="post">
+            <select name="bank"><option th:each="b : ${sampleBanks}" th:value="${b}" th:text="${b}"></option></select>
+            <button class="btn" type="submit">Try it with a sample statement</button>
+        </form>
+    </section>
+</main>
+</body>
+</html>

@@ -1,0 +1,43 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    volumes:
+      - ollama-models:/root/.ollama
+    environment:
+      OLLAMA_KEEP_ALIVE: 10m
+    healthcheck:
+      test: ["CMD", "ollama", "list"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+
+  model-pull:            # one-shot: downloads the model the first time only
+    image: ollama/ollama:latest
+    depends_on:
+      ollama:
+        condition: service_healthy
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+    entrypoint: ["ollama", "pull", "${OLLAMA_MODEL:-qwen2.5:1.5b}"]
+    restart: "no"
+
+  app:
+    build: .
+    depends_on:
+      ollama:
+        condition: service_healthy
+      model-pull:
+        condition: service_completed_successfully
+    environment:
+      SPRING_AI_OLLAMA_BASE_URL: http://ollama:11434
+      SPRING_AI_OLLAMA_CHAT_OPTIONS_MODEL: ${OLLAMA_MODEL:-qwen2.5:1.5b}
+    ports:
+      - "127.0.0.1:8080:8080"     # localhost only: your statements stay on your machine
+    volumes:
+      - app-data:/data            # keeps your learned merchant rules
+    restart: unless-stopped
+
+volumes:
+  ollama-models:
+  app-data:
