@@ -29,9 +29,11 @@ WhereIsMyMoneyGoing parses Indian bank statements locally on your machine, gener
 
 <div align="center">
 
-<video src="assets/Recording%202026-10-22%20190413.mp4" controls="controls" width="100%" style="max-height: 520px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
-  Your browser does not support the video tag. You can view the demo video file directly at <a href="assets/Recording%202026-10-22%20190413.mp4">assets/Recording 2026-10-22 190413.mp4</a>.
+<video src="https://github.com/user-attachments/assets/312d2a8f-f57e-456a-b8ed-04df74eb00a2" controls="controls" width="100%" style="max-height: 520px; border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
+  <a href="https://github.com/user-attachments/assets/312d2a8f-f57e-456a-b8ed-04df74eb00a2">Watch Demo Video</a>
 </video>
+
+<br/>
 
 *Interactive Dashboard · Instant Spend Analytics · Multilingual On-Device LLM Chat*
 
